@@ -46,42 +46,22 @@ pipeline {
             steps {
                 echo '✅ Validating input parameters...'
                 script {
-                    // Convert string parameters to integers
                     def userMessages = params.USER_MESSAGES.toInteger()
                     def aiResponses = params.AI_RESPONSES.toInteger()
                     def validationErrors = params.VALIDATION_ERRORS.toInteger()
                     def sessionTime = params.SESSION_TIME.toInteger()
 
-                    // Validate USER_MESSAGES
-                    if (userMessages < 0) {
-                        error("USER_MESSAGES must be >= 0")
+                    if (userMessages < 0 || userMessages > 1000000) {
+                        error("USER_MESSAGES must be >= 0 and <= 1,000,000")
                     }
-                    if (userMessages > 1000000) {
-                        error("USER_MESSAGES must be <= 1,000,000")
+                    if (aiResponses < 0 || aiResponses > userMessages) {
+                        error("AI_RESPONSES must be >= 0 and <= USER_MESSAGES")
                     }
-
-                    // Validate AI_RESPONSES
-                    if (aiResponses < 0) {
-                        error("AI_RESPONSES must be >= 0")
+                    if (validationErrors < 0 || validationErrors > userMessages) {
+                        error("VALIDATION_ERRORS must be >= 0 and <= USER_MESSAGES")
                     }
-                    if (aiResponses > userMessages) {
-                        error("AI_RESPONSES (${aiResponses}) must be <= USER_MESSAGES (${userMessages})")
-                    }
-
-                    // Validate VALIDATION_ERRORS
-                    if (validationErrors < 0) {
-                        error("VALIDATION_ERRORS must be >= 0")
-                    }
-                    if (validationErrors > userMessages) {
-                        error("VALIDATION_ERRORS (${validationErrors}) must be <= USER_MESSAGES (${userMessages})")
-                    }
-
-                    // Validate SESSION_TIME
-                    if (sessionTime <= 0) {
-                        error("SESSION_TIME must be > 0")
-                    }
-                    if (sessionTime > 1000000) {
-                        error("SESSION_TIME must be <= 1,000,000")
+                    if (sessionTime <= 0 || sessionTime > 1000000) {
+                        error("SESSION_TIME must be > 0 and <= 1,000,000")
                     }
 
                     echo "✅ All parameters validated successfully"
@@ -100,36 +80,28 @@ pipeline {
                 script {
                     echo "🔍 Running chat session report script on ${params.AGENT_SELECTION}..."
                     
-                    def isWindows = isUnix() == false
-                    def pythonCmd = isWindows ? 'python' : 'python3'
-                    
-                    def scriptCommand = """
-                        ${pythonCmd} script.py \\
-                            --user_messages ${params.USER_MESSAGES} \\
-                            --ai_responses ${params.AI_RESPONSES} \\
-                            --validation_errors ${params.VALIDATION_ERRORS} \\
-                            --cta_left ${params.CTA_LEFT} \\
-                            --session_time ${params.SESSION_TIME}
-                    """
-                    
-                    try {
-                        if (params.AGENT_SELECTION == 'agent') {
+                    def runCommand = { nodeLabel ->
+                        if (nodeLabel == 'agent') {
                             node('agent') {
-                                if (isWindows) {
-                                    bat scriptCommand
+                                if (isUnix()) {
+                                    sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    sh scriptCommand
+                                    bat "python script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         } else {
                             node {
-                                if (isWindows) {
-                                    bat scriptCommand
+                                if (isUnix()) {
+                                    sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    sh scriptCommand
+                                    bat "python script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         }
+                    }
+                    
+                    try {
+                        runCommand(params.AGENT_SELECTION)
                     } catch (Exception e) {
                         echo "❌ Script execution failed: ${e.getMessage()}"
                         currentBuild.result = 'FAILURE'
@@ -155,33 +127,13 @@ pipeline {
             steps {
                 echo '✅ Validating generated files...'
                 script {
-                    try {
-                        if (!fileExists('log.txt')) {
-                            error("Log file (log.txt) was not generated!")
-                        }
-                        if (!fileExists('result.html')) {
-                            error("HTML file (result.html) was not generated!")
-                        }
-                        echo "✅ Both files generated successfully"
-                        
-                        // Display file sizes
-                        def isWindows = isUnix() == false
-                        if (isWindows) {
-                            def logSize = bat(script: '@echo off && for /f %%A in (\'log.txt\') do @echo %%~zA', returnStdout: true).trim()
-                            def htmlSize = bat(script: '@echo off && for /f %%A in (\'result.html\') do @echo %%~zA', returnStdout: true).trim()
-                            echo "   log.txt: ${logSize} bytes"
-                            echo "   result.html: ${htmlSize} bytes"
-                        } else {
-                            def logSize = sh(script: 'wc -l < log.txt', returnStdout: true).trim()
-                            def htmlSize = sh(script: 'wc -c < result.html', returnStdout: true).trim()
-                            echo "   log.txt: ${logSize} lines"
-                            echo "   result.html: ${htmlSize} bytes"
-                        }
-                    } catch (Exception e) {
-                        echo "❌ Output validation failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
+                    if (!fileExists('log.txt')) {
+                        error("Log file (log.txt) was not generated!")
                     }
+                    if (!fileExists('result.html')) {
+                        error("HTML file (result.html) was not generated!")
+                    }
+                    echo "✅ Both files generated successfully"
                 }
             }
         }
@@ -190,15 +142,8 @@ pipeline {
             steps {
                 echo '📦 Archiving results...'
                 script {
-                    try {
-                        archiveArtifacts artifacts: 'log.txt, result.html',
-                                         allowEmptyArchive: false
-                        echo "✅ Artifacts archived successfully"
-                    } catch (Exception e) {
-                        echo "❌ Failed to archive artifacts: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
-                    }
+                    archiveArtifacts artifacts: 'log.txt, result.html', allowEmptyArchive: false
+                    echo "✅ Artifacts archived successfully"
                 }
             }
         }
