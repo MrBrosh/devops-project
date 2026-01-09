@@ -86,20 +86,7 @@ pipeline {
                                 if (isUnix()) {
                                     sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    powershell """
-                                        \$python = Get-Command python -ErrorAction SilentlyContinue
-                                        if (\$python) {
-                                            python script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}
-                                        } else {
-                                            \$py = Get-Command py -ErrorAction SilentlyContinue
-                                            if (\$py) {
-                                                py script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}
-                                            } else {
-                                                Write-Error 'Python not found. Please install Python or add it to PATH.'
-                                                exit 1
-                                            }
-                                        }
-                                    """
+                                    bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         } else {
@@ -107,20 +94,7 @@ pipeline {
                                 if (isUnix()) {
                                     sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    powershell """
-                                        \$python = Get-Command python -ErrorAction SilentlyContinue
-                                        if (\$python) {
-                                            python script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}
-                                        } else {
-                                            \$py = Get-Command py -ErrorAction SilentlyContinue
-                                            if (\$py) {
-                                                py script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}
-                                            } else {
-                                                Write-Error 'Python not found. Please install Python or add it to PATH.'
-                                                exit 1
-                                            }
-                                        }
-                                    """
+                                    bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         }
