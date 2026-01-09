@@ -10,6 +10,7 @@
 7. [הגדרות Agent](#הגדרות-agent)
 8. [הגדרות Git/GitHub](#הגדרות-gitgithub)
 9. [בדיקות סופיות](#בדיקות-סופיות)
+10. [פתרון בעיות נפוצות](#פתרון-בעיות-נפוצות)
 
 ---
 
@@ -53,6 +54,11 @@
 - **חשוב**: 
   - ✅ סמן "Add Python to PATH" בהתקנה
   - ✅ התקן Python Launcher (py.exe) - זה מה ש-Jenkins משתמש בו
+  - **למשתמש Windows**: הנתיב המלא ל-`py.exe` מוגדר ב-Jenkinsfile:
+    ```
+    C:\Users\Asus-pc1\AppData\Local\Programs\Python\Launcher\py.exe
+    ```
+    אם הנתיב שלך שונה, עדכן את ה-Jenkinsfile!
 
 ### 3. Git
 - **גרסה**: Git 2.0 ומעלה
@@ -124,7 +130,9 @@ sudo yum install jenkins
 - **מיקום**: Manage Jenkins → Global Tool Configuration → Git
 - **הגדר**:
   - Name: `Default`
-  - Path to Git executable: `C:\Program Files\Git\cmd\git.exe` (Windows) או `/usr/bin/git` (Linux)
+  - Path to Git executable: 
+    - Windows: `C:\Program Files\Git\cmd\git.exe`
+    - Linux: `/usr/bin/git`
   - ✅ Apply & Save
 
 #### 2. GitHub Integration
@@ -133,7 +141,7 @@ sudo yum install jenkins
   - GitHub Server: `https://github.com`
   - אם צריך credentials, צור ב-Manage Jenkins → Credentials
 
-#### 3. Credentials (אם צריך)
+#### 3. Credentials (אם Repository הוא Private)
 - **מיקום**: Manage Jenkins → Credentials → System → Global credentials
 - **צור**:
   - Kind: `Username with password` או `SSH Username with private key`
@@ -156,11 +164,12 @@ sudo yum install jenkins
 
 #### 1. הורד Agent JAR
 - **מיקום**: Jenkins Master → Manage Jenkins → Manage Nodes and Clouds → New Node
-- **שם**: `agent` (או כל שם אחר)
+- **שם**: `agent` (חייב להתאים ל-`node('agent')` ב-Jenkinsfile!)
 - **Type**: `Permanent Agent`
 - **הגדרות**:
   - Remote root directory: `C:\Jenkins\agent` (או כל נתיב)
   - Launch method: `Launch agent via Java Web Start` או `Launch agent by connecting it to the master`
+  - **Labels**: `agent` (חשוב מאוד!)
   - **חשוב**: העתק את ה-command שמופיע
 
 #### 2. הרצת Agent
@@ -242,6 +251,7 @@ git push -u origin main
   - ✅ `script.py`
   - ✅ `Jenkinsfile`
   - ✅ `README.md`
+  - ✅ `REQUIREMENTS.md`
 
 ---
 
@@ -268,13 +278,11 @@ where python
 where py
 ```
 
-#### 3. התקנת תלויות (אם צריך)
-```bash
-# בדוק אם יש requirements.txt
-pip install -r requirements.txt
+#### 3. עדכון Jenkinsfile (אם צריך)
+אם הנתיב ל-`py.exe` שלך שונה, עדכן את ה-Jenkinsfile:
+```groovy
+bat "C:\\YOUR\\PATH\\TO\\py.exe script.py ..."
 ```
-
-**הערה**: הפרויקט הנוכחי לא דורש packages נוספים - רק Python סטנדרטי.
 
 ### התקנה (Linux)
 ```bash
@@ -324,30 +332,13 @@ python3 --version
   - Windows: `C:\Program Files\Git\cmd\git.exe`
   - Linux: `/usr/bin/git`
 
-#### Python (אם צריך):
-- **מיקום**: Manage Jenkins → Global Tool Configuration → Python
-- **Name**: `Python3`
-- **Path to Python executable**:
-  - Windows: `C:\Users\Asus-pc1\AppData\Local\Programs\Python\Launcher\py.exe`
-  - Linux: `/usr/bin/python3`
-
-### 3. הגדרת Environment Variables (אם צריך)
-
-#### Windows:
-- **מיקום**: Manage Jenkins → Configure System → Global properties
-- ✅ "Environment variables"
-- **List of variables**:
-  ```
-  PATH=C:\Users\Asus-pc1\AppData\Local\Programs\Python\Launcher;${PATH}
-  ```
-
 ---
 
 ## 🔗 הגדרות Agent
 
 ### 1. תיוג Agent
 - **מיקום**: Manage Jenkins → Manage Nodes and Clouds → [Agent Name] → Configure
-- **Labels**: `agent` (חייב להתאים ל-`node('agent')` ב-Jenkinsfile)
+- **Labels**: `agent` (חייב להתאים ל-`node('agent')` ב-Jenkinsfile!)
 - **Usage**: "Only build jobs with label expressions matching this node"
 
 ### 2. בדיקת Agent
@@ -436,6 +427,7 @@ git --version
   - ✅ `script.py`
   - ✅ `Jenkinsfile`
   - ✅ `README.md`
+  - ✅ `REQUIREMENTS.md`
 
 ### 7. בדיקת Pipeline
 - Jenkins → `devops-pipeline` → "Build with Parameters"
@@ -466,19 +458,19 @@ git --version
 ## 🔧 פתרון בעיות נפוצות
 
 ### Python לא נמצא
-**תסמינים**: `'python' is not recognized`
+**תסמינים**: `'python' is not recognized` או `Python not found`
 **פתרון**:
 1. בדוק ש-Python מותקן: `py --version`
-2. הוסף ל-PATH של Jenkins (Global properties → Environment variables)
-3. או השתמש בנתיב המלא ב-Jenkinsfile
+2. אם הנתיב שונה, עדכן את ה-Jenkinsfile עם הנתיב המלא ל-`py.exe`
+3. או הוסף ל-PATH של Jenkins (Global properties → Environment variables)
 
 ### Agent לא מתחבר
 **תסמינים**: Agent עם סטטוס "Disconnected"
 **פתרון**:
-1. בדוק ש-Java מותקן ב-Agent
-2. בדוק חיבור רשת ל-Master
+1. בדוק ש-Java מותקן ב-Agent: `java -version`
+2. בדוק חיבור רשת ל-Master (ping, firewall)
 3. בדוק שה-agent.jar רץ
-4. בדוק firewall
+4. בדוק שה-Label של Agent הוא `agent` (חייב להתאים ל-Jenkinsfile)
 
 ### Git לא נמצא
 **תסמינים**: `git: command not found`
@@ -493,18 +485,32 @@ git --version
 2. אם Private: הוסף Credentials ב-Jenkins
 3. בדוק permissions ב-GitHub
 
+### Script לא נמצא ב-Agent
+**תסמינים**: `can't open file 'script.py': No such file or directory`
+**פתרון**:
+- זה כבר תוקן ב-Jenkinsfile עם `checkout scm` בתוך `node('agent')`
+- אם עדיין לא עובד, ודא שה-Agent יכול לגשת ל-GitHub
+
+### Workspace Issues
+**תסמינים**: קובץ לא נמצא למרות שהוא ב-repository
+**פתרון**:
+- על Master: הקובץ כבר ב-workspace (מ-checkout הראשוני)
+- על Agent: ה-Jenkinsfile עושה `checkout scm` בתוך `node('agent')` כדי להביא את הקבצים
+
 ---
 
 ## 📞 תמיכה
 
 אם משהו לא עובד:
-1. בדוק את ה-Console Output ב-Jenkins
+1. בדוק את ה-Console Output ב-Jenkins (הכי חשוב!)
 2. בדוק את ה-logs:
    - Windows: `C:\ProgramData\Jenkins\.jenkins\logs\`
    - Linux: `/var/log/jenkins/`
 3. בדוק את ה-README.md לפרטים נוספים
+4. ודא שכל הגרסאות תואמות (ראה טבלת סיכום)
 
 ---
 
-**עודכן אחרון**: 2024
-**גרסת Jenkinsfile**: 2877d23
+**עודכן אחרון**: 2024  
+**גרסת Jenkinsfile**: a871743  
+**סטטוס**: ✅ Production Ready
