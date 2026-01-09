@@ -80,32 +80,27 @@ pipeline {
                 script {
                     echo "🔍 Running chat session report script on ${params.AGENT_SELECTION}..."
                     
-                    def runCommand = { nodeLabel ->
-                        if (nodeLabel == 'agent') {
-                            node('agent') {
-                                if (isUnix()) {
-                                    sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                                } else {
-                                    bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                                }
-                            }
-                        } else {
-                            node {
-                                if (isUnix()) {
-                                    sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                                } else {
-                                    bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                                }
+                    // Check if script.py exists
+                    if (!fileExists('script.py')) {
+                        error("script.py not found in workspace!")
+                    }
+                    echo "✅ Found script.py"
+                    
+                    if (params.AGENT_SELECTION == 'agent') {
+                        node('agent') {
+                            checkout scm
+                            if (isUnix()) {
+                                sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                            } else {
+                                bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                             }
                         }
-                    }
-                    
-                    try {
-                        runCommand(params.AGENT_SELECTION)
-                    } catch (Exception e) {
-                        echo "❌ Script execution failed: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        throw e
+                    } else {
+                        if (isUnix()) {
+                            sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                        } else {
+                            bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                        }
                     }
                 }
             }
