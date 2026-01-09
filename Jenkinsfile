@@ -86,7 +86,7 @@ pipeline {
                                 if (isUnix()) {
                                     sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    bat "py script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                                    bat "\"C:\\Users\\Asus-pc1\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe\" script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         } else {
@@ -94,7 +94,7 @@ pipeline {
                                 if (isUnix()) {
                                     sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 } else {
-                                    bat "py script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                                    bat "\"C:\\Users\\Asus-pc1\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe\" script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                                 }
                             }
                         }
