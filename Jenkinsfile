@@ -1,6 +1,39 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'AGENT_SELECTION',
+            choices: ['master', 'agent'],
+            description: 'Select where to run the pipeline (master or agent)'
+        )
+        integer(
+            name: 'USER_MESSAGES',
+            defaultValue: 10,
+            description: 'Number of messages sent by user (integer >= 0)'
+        )
+        integer(
+            name: 'AI_RESPONSES',
+            defaultValue: 8,
+            description: 'Number of AI responses (integer >= 0, must be <= USER_MESSAGES)'
+        )
+        integer(
+            name: 'VALIDATION_ERRORS',
+            defaultValue: 2,
+            description: 'Number of validation errors (integer >= 0, must be <= USER_MESSAGES)'
+        )
+        choice(
+            name: 'CTA_LEFT',
+            choices: ['true', 'false'],
+            description: 'Whether user left details in CTA message'
+        )
+        integer(
+            name: 'SESSION_TIME',
+            defaultValue: 15,
+            description: 'Session time in minutes (integer > 0)'
+        )
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -9,19 +42,94 @@ pipeline {
             }
         }
 
+        stage('Validate Parameters') {
+            steps {
+                echo '✅ Validating input parameters...'
+                script {
+                    // Validate USER_MESSAGES
+                    if (params.USER_MESSAGES < 0) {
+                        error("USER_MESSAGES must be >= 0")
+                    }
+                    if (params.USER_MESSAGES > 1000000) {
+                        error("USER_MESSAGES must be <= 1,000,000")
+                    }
+
+                    // Validate AI_RESPONSES
+                    if (params.AI_RESPONSES < 0) {
+                        error("AI_RESPONSES must be >= 0")
+                    }
+                    if (params.AI_RESPONSES > params.USER_MESSAGES) {
+                        error("AI_RESPONSES (${params.AI_RESPONSES}) must be <= USER_MESSAGES (${params.USER_MESSAGES})")
+                    }
+
+                    // Validate VALIDATION_ERRORS
+                    if (params.VALIDATION_ERRORS < 0) {
+                        error("VALIDATION_ERRORS must be >= 0")
+                    }
+                    if (params.VALIDATION_ERRORS > params.USER_MESSAGES) {
+                        error("VALIDATION_ERRORS (${params.VALIDATION_ERRORS}) must be <= USER_MESSAGES (${params.USER_MESSAGES})")
+                    }
+
+                    // Validate SESSION_TIME
+                    if (params.SESSION_TIME <= 0) {
+                        error("SESSION_TIME must be > 0")
+                    }
+                    if (params.SESSION_TIME > 1000000) {
+                        error("SESSION_TIME must be <= 1,000,000")
+                    }
+
+                    echo "✅ All parameters validated successfully"
+                    echo "   USER_MESSAGES: ${params.USER_MESSAGES}"
+                    echo "   AI_RESPONSES: ${params.AI_RESPONSES}"
+                    echo "   VALIDATION_ERRORS: ${params.VALIDATION_ERRORS}"
+                    echo "   CTA_LEFT: ${params.CTA_LEFT}"
+                    echo "   SESSION_TIME: ${params.SESSION_TIME}"
+                    echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
+                }
+            }
+        }
+
         stage('Run Script') {
             steps {
-                echo '🔍 Running chat session report script...'
                 script {
-                    // Run with sample data
-                    sh '''
-                        python3 script.py \
-                            --user_messages 10 \
-                            --ai_responses 8 \
-                            --validation_errors 2 \
-                            --cta_left true \
-                            --session_time 15
-                    '''
+                    echo "🔍 Running chat session report script on ${params.AGENT_SELECTION}..."
+                    
+                    def scriptCommand = """
+                        python3 script.py \\
+                            --user_messages ${params.USER_MESSAGES} \\
+                            --ai_responses ${params.AI_RESPONSES} \\
+                            --validation_errors ${params.VALIDATION_ERRORS} \\
+                            --cta_left ${params.CTA_LEFT} \\
+                            --session_time ${params.SESSION_TIME}
+                    """
+                    
+                    try {
+                        if (params.AGENT_SELECTION == 'agent') {
+                            node('agent') {
+                                sh scriptCommand
+                            }
+                        } else {
+                            node {
+                                sh scriptCommand
+                            }
+                        }
+                    } catch (Exception e) {
+                        echo "❌ Script execution failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
+            }
+        }
+
+        stage('Generate HTML') {
+            steps {
+                echo '📄 HTML file already generated by script'
+                script {
+                    if (!fileExists('result.html')) {
+                        error("HTML file (result.html) was not generated!")
+                    }
+                    echo "✅ HTML file generated successfully"
                 }
             }
         }
@@ -30,11 +138,25 @@ pipeline {
             steps {
                 echo '✅ Validating generated files...'
                 script {
-                    sh '''
-                        test -f log.txt || exit 1
-                        test -f result.html || exit 1
+                    try {
+                        if (!fileExists('log.txt')) {
+                            error("Log file (log.txt) was not generated!")
+                        }
+                        if (!fileExists('result.html')) {
+                            error("HTML file (result.html) was not generated!")
+                        }
                         echo "✅ Both files generated successfully"
-                    '''
+                        
+                        // Display file sizes
+                        def logSize = sh(script: 'wc -l < log.txt', returnStdout: true).trim()
+                        def htmlSize = sh(script: 'wc -c < result.html', returnStdout: true).trim()
+                        echo "   log.txt: ${logSize} lines"
+                        echo "   result.html: ${htmlSize} bytes"
+                    } catch (Exception e) {
+                        echo "❌ Output validation failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
                 }
             }
         }
@@ -42,8 +164,17 @@ pipeline {
         stage('Archive Artifacts') {
             steps {
                 echo '📦 Archiving results...'
-                archiveArtifacts artifacts: 'log.txt, result.html', 
-                                 allowEmptyArchive: false
+                script {
+                    try {
+                        archiveArtifacts artifacts: 'log.txt, result.html',
+                                         allowEmptyArchive: false
+                        echo "✅ Artifacts archived successfully"
+                    } catch (Exception e) {
+                        echo "❌ Failed to archive artifacts: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        throw e
+                    }
+                }
             }
         }
     }
@@ -54,6 +185,8 @@ pipeline {
             script {
                 def duration = currentBuild.durationString
                 echo "⏱️  Duration: ${duration}"
+                echo "   Agent used: ${params.AGENT_SELECTION}"
+                echo "   Build result: ${currentBuild.result ?: 'SUCCESS'}"
             }
         }
         success {
@@ -61,6 +194,10 @@ pipeline {
         }
         failure {
             echo '❌ Pipeline failed!'
+            echo '   Check the console output for details.'
+        }
+        cleanup {
+            echo '🧹 Cleaning up...'
         }
     }
 }
