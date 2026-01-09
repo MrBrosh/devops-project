@@ -100,8 +100,11 @@ pipeline {
                 script {
                     echo "🔍 Running chat session report script on ${params.AGENT_SELECTION}..."
                     
+                    def isWindows = isUnix() == false
+                    def pythonCmd = isWindows ? 'python' : 'python3'
+                    
                     def scriptCommand = """
-                        python3 script.py \\
+                        ${pythonCmd} script.py \\
                             --user_messages ${params.USER_MESSAGES} \\
                             --ai_responses ${params.AI_RESPONSES} \\
                             --validation_errors ${params.VALIDATION_ERRORS} \\
@@ -112,11 +115,19 @@ pipeline {
                     try {
                         if (params.AGENT_SELECTION == 'agent') {
                             node('agent') {
-                                sh scriptCommand
+                                if (isWindows) {
+                                    bat scriptCommand
+                                } else {
+                                    sh scriptCommand
+                                }
                             }
                         } else {
                             node {
-                                sh scriptCommand
+                                if (isWindows) {
+                                    bat scriptCommand
+                                } else {
+                                    sh scriptCommand
+                                }
                             }
                         }
                     } catch (Exception e) {
@@ -154,10 +165,18 @@ pipeline {
                         echo "✅ Both files generated successfully"
                         
                         // Display file sizes
-                        def logSize = sh(script: 'wc -l < log.txt', returnStdout: true).trim()
-                        def htmlSize = sh(script: 'wc -c < result.html', returnStdout: true).trim()
-                        echo "   log.txt: ${logSize} lines"
-                        echo "   result.html: ${htmlSize} bytes"
+                        def isWindows = isUnix() == false
+                        if (isWindows) {
+                            def logSize = bat(script: '@echo off && for /f %%A in (\'log.txt\') do @echo %%~zA', returnStdout: true).trim()
+                            def htmlSize = bat(script: '@echo off && for /f %%A in (\'result.html\') do @echo %%~zA', returnStdout: true).trim()
+                            echo "   log.txt: ${logSize} bytes"
+                            echo "   result.html: ${htmlSize} bytes"
+                        } else {
+                            def logSize = sh(script: 'wc -l < log.txt', returnStdout: true).trim()
+                            def htmlSize = sh(script: 'wc -c < result.html', returnStdout: true).trim()
+                            echo "   log.txt: ${logSize} lines"
+                            echo "   result.html: ${htmlSize} bytes"
+                        }
                     } catch (Exception e) {
                         echo "❌ Output validation failed: ${e.getMessage()}"
                         currentBuild.result = 'FAILURE'
