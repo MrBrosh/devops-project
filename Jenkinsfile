@@ -1,10 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        PROJECT_DIR = "${WORKSPACE}"
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -17,7 +13,7 @@ pipeline {
             steps {
                 echo '🔍 Running chat session report script...'
                 script {
-                    // Example run with sample data
+                    // Run with sample data
                     sh '''
                         python3 script.py \
                             --user_messages 10 \

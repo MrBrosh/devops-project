@@ -1,11 +1,13 @@
 # Chat Session Report Generator
 
+DevOps final project – Jenkins Master/Agent pipeline
+
 Simple Python script that generates a chat session report based on manually entered data.
 
 ## Requirements
 
 - Python 3.x
-- Linux environment
+- Linux/Windows environment
 - No external libraries (uses only standard library)
 
 ## Usage
@@ -41,8 +43,10 @@ The script generates two files:
 
 - All numbers must be >= 0
 - `ai_responses` must be <= `user_messages`
+- `validation_errors` must be <= `user_messages`
 - `session_time` must be > 0
 - `cta_left` must be `true` or `false`
+- All values must be <= 1,000,000
 
 ## Status Determination
 
@@ -53,7 +57,8 @@ The script generates two files:
 ## Jenkins Integration
 
 The `Jenkinsfile` includes a pipeline that:
-1. Checks out code
+1. Checks out code from GitHub
 2. Runs the script with sample data
 3. Validates output files
 4. Archives artifacts
+
