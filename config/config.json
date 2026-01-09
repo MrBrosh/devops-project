@@ -1,0 +1,13 @@
+{
+  "maxFileSize": 104857600,
+  "allowedEncodings": ["utf8", "ascii", "utf-8"],
+  "logPatterns": {
+    "error": ["ERROR", "error", "Error", "FATAL", "fatal", "Fatal", "CRITICAL", "critical"],
+    "warning": ["WARN", "warn", "Warn", "WARNING", "warning", "Warning"],
+    "info": ["INFO", "info", "Info", "INFORMATION", "information"],
+    "debug": ["DEBUG", "debug", "Debug"]
+  },
+  "timePattern": "\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}",
+  "responseTimePattern": "responseTime[:\\s]+(\\d+(?:\\.\\d+)?)",
+  "outputFormats": ["json", "text", "html"]
+}

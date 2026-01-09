@@ -1,0 +1,31 @@
+{
+  "name": "log-analyzer-devops",
+  "version": "1.0.0",
+  "description": "DevOps Log Analyzer - Analyzes log files and returns statistics with validations",
+  "main": "src/log-analyzer.js",
+  "scripts": {
+    "start": "node src/log-analyzer.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "lint": "eslint src/**/*.js",
+    "validate": "node src/validator.js"
+  },
+  "keywords": [
+    "devops",
+    "log-analyzer",
+    "ci-cd",
+    "jenkins"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "fs-extra": "^11.2.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.57.0"
+  }
+}
