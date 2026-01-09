@@ -7,19 +7,19 @@ pipeline {
             choices: ['master', 'agent'],
             description: 'Select where to run the pipeline (master or agent)'
         )
-        integer(
+        string(
             name: 'USER_MESSAGES',
-            defaultValue: 10,
+            defaultValue: '10',
             description: 'Number of messages sent by user (integer >= 0)'
         )
-        integer(
+        string(
             name: 'AI_RESPONSES',
-            defaultValue: 8,
+            defaultValue: '8',
             description: 'Number of AI responses (integer >= 0, must be <= USER_MESSAGES)'
         )
-        integer(
+        string(
             name: 'VALIDATION_ERRORS',
-            defaultValue: 2,
+            defaultValue: '2',
             description: 'Number of validation errors (integer >= 0, must be <= USER_MESSAGES)'
         )
         choice(
@@ -27,9 +27,9 @@ pipeline {
             choices: ['true', 'false'],
             description: 'Whether user left details in CTA message'
         )
-        integer(
+        string(
             name: 'SESSION_TIME',
-            defaultValue: 15,
+            defaultValue: '15',
             description: 'Session time in minutes (integer > 0)'
         )
     }
@@ -46,44 +46,50 @@ pipeline {
             steps {
                 echo '✅ Validating input parameters...'
                 script {
+                    // Convert string parameters to integers
+                    def userMessages = params.USER_MESSAGES.toInteger()
+                    def aiResponses = params.AI_RESPONSES.toInteger()
+                    def validationErrors = params.VALIDATION_ERRORS.toInteger()
+                    def sessionTime = params.SESSION_TIME.toInteger()
+
                     // Validate USER_MESSAGES
-                    if (params.USER_MESSAGES < 0) {
+                    if (userMessages < 0) {
                         error("USER_MESSAGES must be >= 0")
                     }
-                    if (params.USER_MESSAGES > 1000000) {
+                    if (userMessages > 1000000) {
                         error("USER_MESSAGES must be <= 1,000,000")
                     }
 
                     // Validate AI_RESPONSES
-                    if (params.AI_RESPONSES < 0) {
+                    if (aiResponses < 0) {
                         error("AI_RESPONSES must be >= 0")
                     }
-                    if (params.AI_RESPONSES > params.USER_MESSAGES) {
-                        error("AI_RESPONSES (${params.AI_RESPONSES}) must be <= USER_MESSAGES (${params.USER_MESSAGES})")
+                    if (aiResponses > userMessages) {
+                        error("AI_RESPONSES (${aiResponses}) must be <= USER_MESSAGES (${userMessages})")
                     }
 
                     // Validate VALIDATION_ERRORS
-                    if (params.VALIDATION_ERRORS < 0) {
+                    if (validationErrors < 0) {
                         error("VALIDATION_ERRORS must be >= 0")
                     }
-                    if (params.VALIDATION_ERRORS > params.USER_MESSAGES) {
-                        error("VALIDATION_ERRORS (${params.VALIDATION_ERRORS}) must be <= USER_MESSAGES (${params.USER_MESSAGES})")
+                    if (validationErrors > userMessages) {
+                        error("VALIDATION_ERRORS (${validationErrors}) must be <= USER_MESSAGES (${userMessages})")
                     }
 
                     // Validate SESSION_TIME
-                    if (params.SESSION_TIME <= 0) {
+                    if (sessionTime <= 0) {
                         error("SESSION_TIME must be > 0")
                     }
-                    if (params.SESSION_TIME > 1000000) {
+                    if (sessionTime > 1000000) {
                         error("SESSION_TIME must be <= 1,000,000")
                     }
 
                     echo "✅ All parameters validated successfully"
-                    echo "   USER_MESSAGES: ${params.USER_MESSAGES}"
-                    echo "   AI_RESPONSES: ${params.AI_RESPONSES}"
-                    echo "   VALIDATION_ERRORS: ${params.VALIDATION_ERRORS}"
+                    echo "   USER_MESSAGES: ${userMessages}"
+                    echo "   AI_RESPONSES: ${aiResponses}"
+                    echo "   VALIDATION_ERRORS: ${validationErrors}"
                     echo "   CTA_LEFT: ${params.CTA_LEFT}"
-                    echo "   SESSION_TIME: ${params.SESSION_TIME}"
+                    echo "   SESSION_TIME: ${sessionTime}"
                     echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
                 }
             }
