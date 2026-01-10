@@ -46,90 +46,77 @@ pipeline {
             steps {
                 echo '✅ Validating input parameters...'
                 script {
-                    try {
-                        echo "   Received parameters:"
-                        echo "   - USER_MESSAGES: '${params.USER_MESSAGES}'"
-                        echo "   - AI_RESPONSES: '${params.AI_RESPONSES}'"
-                        echo "   - VALIDATION_ERRORS: '${params.VALIDATION_ERRORS}'"
-                        echo "   - SESSION_TIME: '${params.SESSION_TIME}'"
-                        echo "   - CTA_LEFT: '${params.CTA_LEFT}'"
-                        
-                        def userMessages
-                        def aiResponses
-                        def validationErrors
-                        def sessionTime
-                        
-                        // Validate USER_MESSAGES - must be integer
-                        if (!params.USER_MESSAGES.matches('^-?\\d+$')) {
-                            error("❌ Validation Failed: USER_MESSAGES = '${params.USER_MESSAGES}' is not a valid integer. Expected: integer >= 0 and <= 1,000,000")
-                        }
-                        userMessages = params.USER_MESSAGES.toInteger()
-                        
-                        // Validate AI_RESPONSES - must be integer
-                        if (!params.AI_RESPONSES.matches('^-?\\d+$')) {
-                            error("❌ Validation Failed: AI_RESPONSES = '${params.AI_RESPONSES}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
-                        }
-                        aiResponses = params.AI_RESPONSES.toInteger()
-                        
-                        // Validate VALIDATION_ERRORS - must be integer
-                        if (!params.VALIDATION_ERRORS.matches('^-?\\d+$')) {
-                            error("❌ Validation Failed: VALIDATION_ERRORS = '${params.VALIDATION_ERRORS}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
-                        }
-                        validationErrors = params.VALIDATION_ERRORS.toInteger()
-                        
-                        // Validate SESSION_TIME - must be integer
-                        if (!params.SESSION_TIME.matches('^-?\\d+$')) {
-                            error("❌ Validation Failed: SESSION_TIME = '${params.SESSION_TIME}' is not a valid integer. Expected: integer > 0 and <= 1,000,000")
-                        }
-                        sessionTime = params.SESSION_TIME.toInteger()
-
-                        // Validate USER_MESSAGES
-                        if (userMessages < 0 || userMessages > 1000000) {
-                            error("❌ Validation Failed: USER_MESSAGES = ${userMessages}, expected: >= 0 and <= 1,000,000")
-                        }
-                        
-                        // Validate AI_RESPONSES
-                        if (aiResponses < 0) {
-                            error("❌ Validation Failed: AI_RESPONSES = ${aiResponses}, expected: >= 0")
-                        }
-                        if (aiResponses > userMessages) {
-                            error("❌ Validation Failed: AI_RESPONSES = ${aiResponses} > USER_MESSAGES = ${userMessages}, expected: AI_RESPONSES <= USER_MESSAGES")
-                        }
-                        
-                        // Validate VALIDATION_ERRORS
-                        if (validationErrors < 0) {
-                            error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors}, expected: >= 0")
-                        }
-                        if (validationErrors > userMessages) {
-                            error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors} > USER_MESSAGES = ${userMessages}, expected: VALIDATION_ERRORS <= USER_MESSAGES")
-                        }
-                        
-                        // Validate SESSION_TIME
-                        if (sessionTime <= 0) {
-                            error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: > 0")
-                        }
-                        if (sessionTime > 1000000) {
-                            error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: <= 1,000,000")
-                        }
-                        
-                        // Validate CTA_LEFT
-                        if (params.CTA_LEFT != 'true' && params.CTA_LEFT != 'false') {
-                            error("❌ Validation Failed: CTA_LEFT = '${params.CTA_LEFT}', expected: 'true' or 'false'")
-                        }
-
-                        echo "✅ All parameters validated successfully"
-                        echo "   USER_MESSAGES: ${userMessages}"
-                        echo "   AI_RESPONSES: ${aiResponses}"
-                        echo "   VALIDATION_ERRORS: ${validationErrors}"
-                        echo "   CTA_LEFT: ${params.CTA_LEFT}"
-                        echo "   SESSION_TIME: ${sessionTime}"
-                        echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
-                    } catch (Exception e) {
-                        // This catch block handles any other unexpected errors
-                        // NumberFormatException is already handled individually above
-                        echo "❌ Unexpected validation error: ${e.getMessage()}"
-                        error("❌ Validation Failed: ${e.getMessage()}")
+                    echo "   Received parameters:"
+                    echo "   - USER_MESSAGES: '${params.USER_MESSAGES}'"
+                    echo "   - AI_RESPONSES: '${params.AI_RESPONSES}'"
+                    echo "   - VALIDATION_ERRORS: '${params.VALIDATION_ERRORS}'"
+                    echo "   - SESSION_TIME: '${params.SESSION_TIME}'"
+                    echo "   - CTA_LEFT: '${params.CTA_LEFT}'"
+                    
+                    // Validate format before conversion - use regex to check if valid integer
+                    if (!params.USER_MESSAGES.matches('^-?\\d+$')) {
+                        error("❌ Validation Failed: USER_MESSAGES = '${params.USER_MESSAGES}' is not a valid integer. Expected: integer >= 0 and <= 1,000,000")
                     }
+                    
+                    if (!params.AI_RESPONSES.matches('^-?\\d+$')) {
+                        error("❌ Validation Failed: AI_RESPONSES = '${params.AI_RESPONSES}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
+                    }
+                    
+                    if (!params.VALIDATION_ERRORS.matches('^-?\\d+$')) {
+                        error("❌ Validation Failed: VALIDATION_ERRORS = '${params.VALIDATION_ERRORS}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
+                    }
+                    
+                    if (!params.SESSION_TIME.matches('^-?\\d+$')) {
+                        error("❌ Validation Failed: SESSION_TIME = '${params.SESSION_TIME}' is not a valid integer. Expected: integer > 0 and <= 1,000,000")
+                    }
+                    
+                    // Convert to integers (safe now after format validation)
+                    def userMessages = params.USER_MESSAGES.toInteger()
+                    def aiResponses = params.AI_RESPONSES.toInteger()
+                    def validationErrors = params.VALIDATION_ERRORS.toInteger()
+                    def sessionTime = params.SESSION_TIME.toInteger()
+
+                    // Validate USER_MESSAGES range
+                    if (userMessages < 0 || userMessages > 1000000) {
+                        error("❌ Validation Failed: USER_MESSAGES = ${userMessages}, expected: >= 0 and <= 1,000,000")
+                    }
+                    
+                    // Validate AI_RESPONSES
+                    if (aiResponses < 0) {
+                        error("❌ Validation Failed: AI_RESPONSES = ${aiResponses}, expected: >= 0")
+                    }
+                    if (aiResponses > userMessages) {
+                        error("❌ Validation Failed: AI_RESPONSES = ${aiResponses} > USER_MESSAGES = ${userMessages}, expected: AI_RESPONSES <= USER_MESSAGES")
+                    }
+                    
+                    // Validate VALIDATION_ERRORS
+                    if (validationErrors < 0) {
+                        error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors}, expected: >= 0")
+                    }
+                    if (validationErrors > userMessages) {
+                        error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors} > USER_MESSAGES = ${userMessages}, expected: VALIDATION_ERRORS <= USER_MESSAGES")
+                    }
+                    
+                    // Validate SESSION_TIME
+                    if (sessionTime <= 0) {
+                        error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: > 0")
+                    }
+                    if (sessionTime > 1000000) {
+                        error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: <= 1,000,000")
+                    }
+                    
+                    // Validate CTA_LEFT
+                    if (params.CTA_LEFT != 'true' && params.CTA_LEFT != 'false') {
+                        error("❌ Validation Failed: CTA_LEFT = '${params.CTA_LEFT}', expected: 'true' or 'false'")
+                    }
+
+                    echo "✅ All parameters validated successfully"
+                    echo "   USER_MESSAGES: ${userMessages}"
+                    echo "   AI_RESPONSES: ${aiResponses}"
+                    echo "   VALIDATION_ERRORS: ${validationErrors}"
+                    echo "   CTA_LEFT: ${params.CTA_LEFT}"
+                    echo "   SESSION_TIME: ${sessionTime}"
+                    echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
                 }
             }
         }
