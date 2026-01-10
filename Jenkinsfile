@@ -46,31 +46,58 @@ pipeline {
             steps {
                 echo '✅ Validating input parameters...'
                 script {
-                    def userMessages = params.USER_MESSAGES.toInteger()
-                    def aiResponses = params.AI_RESPONSES.toInteger()
-                    def validationErrors = params.VALIDATION_ERRORS.toInteger()
-                    def sessionTime = params.SESSION_TIME.toInteger()
+                    try {
+                        def userMessages = params.USER_MESSAGES.toInteger()
+                        def aiResponses = params.AI_RESPONSES.toInteger()
+                        def validationErrors = params.VALIDATION_ERRORS.toInteger()
+                        def sessionTime = params.SESSION_TIME.toInteger()
 
-                    if (userMessages < 0 || userMessages > 1000000) {
-                        error("USER_MESSAGES must be >= 0 and <= 1,000,000")
-                    }
-                    if (aiResponses < 0 || aiResponses > userMessages) {
-                        error("AI_RESPONSES must be >= 0 and <= USER_MESSAGES")
-                    }
-                    if (validationErrors < 0 || validationErrors > userMessages) {
-                        error("VALIDATION_ERRORS must be >= 0 and <= USER_MESSAGES")
-                    }
-                    if (sessionTime <= 0 || sessionTime > 1000000) {
-                        error("SESSION_TIME must be > 0 and <= 1,000,000")
-                    }
+                        // Validate USER_MESSAGES
+                        if (userMessages < 0 || userMessages > 1000000) {
+                            error("❌ Validation Failed: USER_MESSAGES = ${userMessages}, expected: >= 0 and <= 1,000,000")
+                        }
+                        
+                        // Validate AI_RESPONSES
+                        if (aiResponses < 0) {
+                            error("❌ Validation Failed: AI_RESPONSES = ${aiResponses}, expected: >= 0")
+                        }
+                        if (aiResponses > userMessages) {
+                            error("❌ Validation Failed: AI_RESPONSES = ${aiResponses} > USER_MESSAGES = ${userMessages}, expected: AI_RESPONSES <= USER_MESSAGES")
+                        }
+                        
+                        // Validate VALIDATION_ERRORS
+                        if (validationErrors < 0) {
+                            error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors}, expected: >= 0")
+                        }
+                        if (validationErrors > userMessages) {
+                            error("❌ Validation Failed: VALIDATION_ERRORS = ${validationErrors} > USER_MESSAGES = ${userMessages}, expected: VALIDATION_ERRORS <= USER_MESSAGES")
+                        }
+                        
+                        // Validate SESSION_TIME
+                        if (sessionTime <= 0) {
+                            error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: > 0")
+                        }
+                        if (sessionTime > 1000000) {
+                            error("❌ Validation Failed: SESSION_TIME = ${sessionTime}, expected: <= 1,000,000")
+                        }
+                        
+                        // Validate CTA_LEFT
+                        if (params.CTA_LEFT != 'true' && params.CTA_LEFT != 'false') {
+                            error("❌ Validation Failed: CTA_LEFT = '${params.CTA_LEFT}', expected: 'true' or 'false'")
+                        }
 
-                    echo "✅ All parameters validated successfully"
-                    echo "   USER_MESSAGES: ${userMessages}"
-                    echo "   AI_RESPONSES: ${aiResponses}"
-                    echo "   VALIDATION_ERRORS: ${validationErrors}"
-                    echo "   CTA_LEFT: ${params.CTA_LEFT}"
-                    echo "   SESSION_TIME: ${sessionTime}"
-                    echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
+                        echo "✅ All parameters validated successfully"
+                        echo "   USER_MESSAGES: ${userMessages}"
+                        echo "   AI_RESPONSES: ${aiResponses}"
+                        echo "   VALIDATION_ERRORS: ${validationErrors}"
+                        echo "   CTA_LEFT: ${params.CTA_LEFT}"
+                        echo "   SESSION_TIME: ${sessionTime}"
+                        echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
+                    } catch (NumberFormatException e) {
+                        error("❌ Validation Failed: Invalid number format. Please ensure all numeric parameters are valid integers.")
+                    } catch (Exception e) {
+                        error("❌ Validation Failed: ${e.getMessage()}")
+                    }
                 }
             }
         }
@@ -80,27 +107,33 @@ pipeline {
                 script {
                     echo "🔍 Running chat session report script on ${params.AGENT_SELECTION}..."
                     
-                    // Check if script.py exists
-                    if (!fileExists('script.py')) {
-                        error("script.py not found in workspace!")
-                    }
-                    echo "✅ Found script.py"
-                    
-                    if (params.AGENT_SELECTION == 'agent') {
-                        node('agent') {
-                            checkout scm
+                    try {
+                        // Check if script.py exists
+                        if (!fileExists('script.py')) {
+                            error("❌ Script file not found: script.py is missing in workspace!")
+                        }
+                        echo "✅ Found script.py"
+                        
+                        if (params.AGENT_SELECTION == 'agent') {
+                            node('agent') {
+                                checkout scm
+                                if (isUnix()) {
+                                    sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                                } else {
+                                    bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
+                                }
+                            }
+                        } else {
                             if (isUnix()) {
                                 sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                             } else {
                                 bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
                             }
                         }
-                    } else {
-                        if (isUnix()) {
-                            sh "python3 script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                        } else {
-                            bat "C:\\Users\\Asus-pc1\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe script.py --user_messages ${params.USER_MESSAGES} --ai_responses ${params.AI_RESPONSES} --validation_errors ${params.VALIDATION_ERRORS} --cta_left ${params.CTA_LEFT} --session_time ${params.SESSION_TIME}"
-                        }
+                    } catch (Exception e) {
+                        echo "❌ Script execution failed: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error("❌ Script execution failed: ${e.getMessage()}")
                     }
                 }
             }
