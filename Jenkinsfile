@@ -47,10 +47,41 @@ pipeline {
                 echo '✅ Validating input parameters...'
                 script {
                     try {
-                        def userMessages = params.USER_MESSAGES.toInteger()
-                        def aiResponses = params.AI_RESPONSES.toInteger()
-                        def validationErrors = params.VALIDATION_ERRORS.toInteger()
-                        def sessionTime = params.SESSION_TIME.toInteger()
+                        echo "   Received parameters:"
+                        echo "   - USER_MESSAGES: '${params.USER_MESSAGES}'"
+                        echo "   - AI_RESPONSES: '${params.AI_RESPONSES}'"
+                        echo "   - VALIDATION_ERRORS: '${params.VALIDATION_ERRORS}'"
+                        echo "   - SESSION_TIME: '${params.SESSION_TIME}'"
+                        echo "   - CTA_LEFT: '${params.CTA_LEFT}'"
+                        
+                        def userMessages
+                        def aiResponses
+                        def validationErrors
+                        def sessionTime
+                        
+                        try {
+                            userMessages = params.USER_MESSAGES.toInteger()
+                        } catch (NumberFormatException e) {
+                            error("❌ Validation Failed: USER_MESSAGES = '${params.USER_MESSAGES}' is not a valid integer. Expected: integer >= 0")
+                        }
+                        
+                        try {
+                            aiResponses = params.AI_RESPONSES.toInteger()
+                        } catch (NumberFormatException e) {
+                            error("❌ Validation Failed: AI_RESPONSES = '${params.AI_RESPONSES}' is not a valid integer. Expected: integer >= 0")
+                        }
+                        
+                        try {
+                            validationErrors = params.VALIDATION_ERRORS.toInteger()
+                        } catch (NumberFormatException e) {
+                            error("❌ Validation Failed: VALIDATION_ERRORS = '${params.VALIDATION_ERRORS}' is not a valid integer. Expected: integer >= 0")
+                        }
+                        
+                        try {
+                            sessionTime = params.SESSION_TIME.toInteger()
+                        } catch (NumberFormatException e) {
+                            error("❌ Validation Failed: SESSION_TIME = '${params.SESSION_TIME}' is not a valid integer. Expected: integer > 0")
+                        }
 
                         // Validate USER_MESSAGES
                         if (userMessages < 0 || userMessages > 1000000) {
@@ -93,9 +124,10 @@ pipeline {
                         echo "   CTA_LEFT: ${params.CTA_LEFT}"
                         echo "   SESSION_TIME: ${sessionTime}"
                         echo "   AGENT_SELECTION: ${params.AGENT_SELECTION}"
-                    } catch (NumberFormatException e) {
-                        error("❌ Validation Failed: Invalid number format. Please ensure all numeric parameters are valid integers.")
                     } catch (Exception e) {
+                        // This catch block handles any other unexpected errors
+                        // NumberFormatException is already handled individually above
+                        echo "❌ Unexpected validation error: ${e.getMessage()}"
                         error("❌ Validation Failed: ${e.getMessage()}")
                     }
                 }
