@@ -59,29 +59,29 @@ pipeline {
                         def validationErrors
                         def sessionTime
                         
-                        try {
-                            userMessages = params.USER_MESSAGES.toInteger()
-                        } catch (NumberFormatException e) {
-                            error("❌ Validation Failed: USER_MESSAGES = '${params.USER_MESSAGES}' is not a valid integer. Expected: integer >= 0")
+                        // Validate USER_MESSAGES - must be integer
+                        if (!params.USER_MESSAGES.matches('^-?\\d+$')) {
+                            error("❌ Validation Failed: USER_MESSAGES = '${params.USER_MESSAGES}' is not a valid integer. Expected: integer >= 0 and <= 1,000,000")
                         }
+                        userMessages = params.USER_MESSAGES.toInteger()
                         
-                        try {
-                            aiResponses = params.AI_RESPONSES.toInteger()
-                        } catch (NumberFormatException e) {
-                            error("❌ Validation Failed: AI_RESPONSES = '${params.AI_RESPONSES}' is not a valid integer. Expected: integer >= 0")
+                        // Validate AI_RESPONSES - must be integer
+                        if (!params.AI_RESPONSES.matches('^-?\\d+$')) {
+                            error("❌ Validation Failed: AI_RESPONSES = '${params.AI_RESPONSES}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
                         }
+                        aiResponses = params.AI_RESPONSES.toInteger()
                         
-                        try {
-                            validationErrors = params.VALIDATION_ERRORS.toInteger()
-                        } catch (NumberFormatException e) {
-                            error("❌ Validation Failed: VALIDATION_ERRORS = '${params.VALIDATION_ERRORS}' is not a valid integer. Expected: integer >= 0")
+                        // Validate VALIDATION_ERRORS - must be integer
+                        if (!params.VALIDATION_ERRORS.matches('^-?\\d+$')) {
+                            error("❌ Validation Failed: VALIDATION_ERRORS = '${params.VALIDATION_ERRORS}' is not a valid integer. Expected: integer >= 0 and <= USER_MESSAGES")
                         }
+                        validationErrors = params.VALIDATION_ERRORS.toInteger()
                         
-                        try {
-                            sessionTime = params.SESSION_TIME.toInteger()
-                        } catch (NumberFormatException e) {
-                            error("❌ Validation Failed: SESSION_TIME = '${params.SESSION_TIME}' is not a valid integer. Expected: integer > 0")
+                        // Validate SESSION_TIME - must be integer
+                        if (!params.SESSION_TIME.matches('^-?\\d+$')) {
+                            error("❌ Validation Failed: SESSION_TIME = '${params.SESSION_TIME}' is not a valid integer. Expected: integer > 0 and <= 1,000,000")
                         }
+                        sessionTime = params.SESSION_TIME.toInteger()
 
                         // Validate USER_MESSAGES
                         if (userMessages < 0 || userMessages > 1000000) {
